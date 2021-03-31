@@ -48,9 +48,12 @@ F2 = cp.multiply(X.T @ M, cp.inv_pos(E))
 F3 = cp.multiply(X.T @ S, cp.inv_pos(T))
 F = 1 / n * (cp.sum(F1) + cp.sum(F2) + cp.sum(F3))
 
-objective = cp.Minimize((C.T @ cp.max(R_c.T @ X.T @ B, axis=1)) + 20 * (cp.diag(Y_c @ A @ R_c.T @ X.T) @ Q) - 3000 * F)
-constraints = [X.T @ P <= U, X.T @ M <= E, X.T @ S <= T, X @ I_n == I_m]
+V = cp.diag(Y_c @ A @ R_c.T @ X.T) @ Q
 
+# objective = cp.Minimize((C.T @ cp.max(R_c.T @ X.T @ B, axis=1)) - 3000 * F)  can successfully run
+# add expression V into objective（as below） will cause "Segmentation fault (core dumped)"
+objective = cp.Minimize((C.T @ cp.max(R_c.T @ X.T @ B, axis=1)) + 20 * V - 3000 * F)
+constraints = [X.T @ P <= U, X.T @ M <= E, X.T @ S <= T, X @ I_n == I_m]
 
 start = datetime.now()
 prob = cp.Problem(objective, constraints)
@@ -60,6 +63,5 @@ print("optimal value", prob.value)
 print("optimal X var", X.value)
 print("optimal Y var", np.dot(X.value, R_c))
 
-#np.save('./cvxpy/X_gurobi.npy',X.value )
 print(datetime.now() - start)
 np.save('./cvxpy/X_gurobi.npy', X.value)
